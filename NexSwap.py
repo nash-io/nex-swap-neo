@@ -19,8 +19,8 @@ from boa.interop.Neo.Transaction import *
 
 ctx = GetContext()
 
-OnSwapToEth = RegisterAction("onSwapToEth", "addr","amount")
-OnSwapFromEth = RegisterAction("onSwapFromEth", "addr", "amount")
+OnSwapToEth = RegisterAction("onSwapToEth", "addr", "ethAddr", "amount")
+OnSwapFromEth = RegisterAction("onSwapFromEth", "addr", "ethAddr", "amount")
 
 SWAP_CONTRACT_KEY= 'swapContract'
 
@@ -46,12 +46,12 @@ def Main(operation, args):
     elif trigger == Application():
 
         if operation == 'swapToEth':
-            if len(args) == 2:
+            if len(args) == 3:
                 return swapToEth(args)
             raise Exception("Invalid argument length")
 
         elif operation == 'swapFromEth':
-            if len(args) == 2:
+            if len(args) == 3:
                 return swapFromEth(args)
             raise Exception("Invalid argument length")
 
@@ -81,7 +81,11 @@ def Main(operation, args):
 
 def swapToEth(args):
     addr = args[0]
-    amount = args[1]
+    ethAddr = args[1]
+    amount = args[2]
+    
+    validateEthAddr(ethAddr)
+    validateNeoAddr(addr)
 
     tx = GetScriptContainer()
     txHash = tx.Hash
@@ -103,7 +107,7 @@ def swapToEth(args):
 
     if transferOfTokens:
         Put(ctx, swapId, 1)
-        OnSwapToEth(addr, amount)
+        OnSwapToEth(addr, ethAddr, amount)
         return True
 
     raise Exception("Could not transfer tokens to staking contract")
@@ -116,7 +120,11 @@ def swapFromEth(args):
     """
     if check_owners(ctx, 1):
         addr = args[0]
-        amount = args[1]
+        ethAddr = args[1]
+        amount = args[2]
+
+        validateEthAddr(ethAddr)
+        validateNeoAddr(addr)
 
         totalAvailable = getTotalSwapped()
         if totalAvailable < amount:
@@ -126,9 +134,8 @@ def swapFromEth(args):
         args = [GetExecutingScriptHash(), addr, amount]
 
         transferOfTokens = DynamicAppCall(getSwapContract(), 'transfer', args)
-
         if transferOfTokens:
-            OnSwapFromEth(addr,amount)
+            OnSwapFromEth(addr,ethAddr,amount)
             return True
     return False
 
@@ -148,6 +155,17 @@ def setSwapContract(args):
             Put(ctx, SWAP_CONTRACT_KEY, contract)
             return True 
     return False
+
+
+def validateNeoAddr(addr):
+    if len(addr) != 20:
+        raise Exception("Invalid Neo Addr")
+    return True
+
+def validateEthAddr(addr):
+    if len(addr) != 40:
+        raise Exception("Invalid Eth Addr")
+    return True
 
 def getSwapContract():
     contract = Get(ctx, SWAP_CONTRACT_KEY)
