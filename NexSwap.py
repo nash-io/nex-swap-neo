@@ -91,7 +91,7 @@ def swapToEth(args):
     txHash = tx.Hash
 
     if not CheckWitness(addr):
-        raise Exception("Must be signed by staker addr")
+        raise Exception("Must be signed by swapper addr")
 
     if amount <= 0:
         raise Exception("Invalid amount")
@@ -99,7 +99,7 @@ def swapToEth(args):
     swapId = concat(txHash, addr)
 
     if Get(ctx, swapId) > 0:
-        raise Exception("Already stake for this transaction and address")
+        raise Exception("Already swap for this transaction and address")
 
     args = [addr, GetExecutingScriptHash(), amount]
 
@@ -110,7 +110,7 @@ def swapToEth(args):
         OnSwapToEth(addr, ethAddr, amount)
         return True
 
-    raise Exception("Could not transfer tokens to staking contract")
+    raise Exception("Could not transfer tokens to swap contract")
 
 
 
