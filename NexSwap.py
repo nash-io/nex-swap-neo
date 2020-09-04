@@ -19,8 +19,8 @@ from boa.interop.Neo.Transaction import *
 
 ctx = GetContext()
 
-OnSwapToEth = RegisterAction("onSwapToEth", "addr", "ethAddr", "amount")
-OnSwapFromEth = RegisterAction("onSwapFromEth", "addr", "ethAddr", "amount")
+OnSwapToEth = RegisterAction("onSwapToEth", "addr", "ethAddr", "amount", "swapId")
+OnSwapFromEth = RegisterAction("onSwapFromEth", "addr", "ethAddr", "amount", "swapId")
 
 SWAP_CONTRACT_KEY= 'swapContract'
 
@@ -40,10 +40,19 @@ def Main(operation, args):
     # To determine whether a transfer of system assets ( NEO/Gas) involving
     # This contract's address can proceed
     if trigger == Verification():
-
+        # This is used in case a contract migration is needed ( for example NEO3 transition)
+        if check_owners(ctx, 4):
+            return True
         return False
 
     elif trigger == Application():
+
+        if operation == 'initializeOwners':
+            return initialize_owners(ctx)
+
+        if not check_owners_initialized(ctx):
+            print('Please initialize owners')
+            return False
 
         if operation == 'swapToEth':
             if len(args) == 3:
@@ -51,7 +60,7 @@ def Main(operation, args):
             raise Exception("Invalid argument length")
 
         elif operation == 'swapFromEth':
-            if len(args) == 3:
+            if len(args) == 4:
                 return swapFromEth(args)
             raise Exception("Invalid argument length")
 
@@ -60,10 +69,9 @@ def Main(operation, args):
 
         # owner / admin methods
         elif operation == 'setSwapTokenContract':
-            return setSwapContract(args)
-
-        elif operation == 'initializeOwners':
-            return initialize_owners(ctx)
+            if len(args) == 1:                
+                return setSwapContract(args)
+            raise Exception('Invalid argument length')
 
         elif operation == 'getOwners':
             return get_owners(ctx)
@@ -107,7 +115,7 @@ def swapToEth(args):
 
     if transferOfTokens:
         Put(ctx, swapId, 1)
-        OnSwapToEth(addr, ethAddr, amount)
+        OnSwapToEth(addr, ethAddr, amount, swapId)
         return True
 
     raise Exception("Could not transfer tokens to swap contract")
@@ -119,9 +127,14 @@ def swapFromEth(args):
     Only admin may execute a swap from eth
     """
     if check_owners(ctx, 1):
-        addr = args[0]
+        addr = args[0] # Neo Address to send NEX to 
         ethAddr = args[1]
         amount = args[2]
+        swapId = args[3] # Eth transaction hash + eth address
+
+        # Prevent admin from accidentally performing swap back more than once
+        if Get(ctx, swapId) > 0:
+            raise Exception("Already swap for this transaction and address")
 
         validateEthAddr(ethAddr)
         validateNeoAddr(addr)
@@ -135,8 +148,10 @@ def swapFromEth(args):
 
         transferOfTokens = DynamicAppCall(getSwapContract(), 'transfer', args)
         if transferOfTokens:
-            OnSwapFromEth(addr,ethAddr,amount)
+            Put(ctx, swapId, 1)
+            OnSwapFromEth(addr,ethAddr,amount,swapId)
             return True
+
     return False
 
 

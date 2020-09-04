@@ -18,7 +18,11 @@ TOKEN_OWNER3 = b'B\xea#\xdb\xf1LS"\xa7\x93\x02\xcc|\x00\xc39\x80y\xa5\xa8'
 TOKEN_OWNER4 = b'\x14\x8c5l\xec#\x14\xb3\xac\xa4\x1e\xe7\xd3\x82\xa0\x965\x9c\xce\xf9'
 TOKEN_OWNER5 = b'\xc0[\xd5\x02\x8c\x88\x89,4~\xe7H\xc3o\x8d3;\x94n\xb0'
 
-    
+OWNERS_INITIALIZED = 'owners_initialized'
+
+def check_owners_initialized(ctx):
+    return Get(ctx, OWNERS_INITIALIZED)
+
 def initialize_owners(ctx):
     """
     Initializes the owners from the hard coded version in the contract
@@ -28,15 +32,16 @@ def initialize_owners(ctx):
     :param ctx: StorageContext
     :return:
     """
-    if not Get(ctx, 'owners_initialized'):
-
+    print("checking owners initialized")
+    if not check_owners_initialized(ctx):
+        print("initializing owners!")
         Put(ctx, 'owner1', TOKEN_OWNER1)
         Put(ctx, 'owner2', TOKEN_OWNER2)
         Put(ctx, 'owner3', TOKEN_OWNER3)
         Put(ctx, 'owner4', TOKEN_OWNER4)
         Put(ctx, 'owner5', TOKEN_OWNER5)
 
-        Put(ctx, 'owners_initialized', True)
+        Put(ctx, OWNERS_INITIALIZED, True)
         return True
 
     return False
@@ -70,9 +75,6 @@ def check_owners(ctx, required):
     :param ctx: StorageContext
     :return: bool
     """
-    if not Get(ctx, 'owners_initialized'):
-        print("Please run initializeOwners")
-        return False
 
     total = 0
 
