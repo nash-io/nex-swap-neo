@@ -24,7 +24,7 @@ class TestSwap(TestSwapBase):
         current_balance_user = int(token.GetBalance(user_wallet, self.token_owner_addr()))
         current_balance_contract = int(token.GetBalance(user_wallet, TestSwapBase.swap_contract))
 
-        amountToSwap = 100
+        amountToSwap = 1000
         eth_addr = '7FAB4CB3D917719284F9E715A9c6B6FA1fBA217f'
         swap_args = [self.token_owner_addr(), eth_addr, Fixed8.FromDecimal(amountToSwap).value]
 
@@ -64,6 +64,14 @@ class TestSwap(TestSwapBase):
         tx, results = self.invoke_test(user_wallet, 'swapToEth', swap_args, contract=TestSwapBase.swap_contract.ToString())
         self.assertEqual(len(results), 0)
 
+        # Test min swap amount
+        amountToSwap = 499.99999
+        eth_addr = '7FAB4CB3D917719284F9E715A9c6B6FA1fBA217f'
+        swap_args = [self.token_owner_addr(), eth_addr, Fixed8.FromDecimal(amountToSwap).value]
+
+        tx, results = self.invoke_test(user_wallet, 'swapToEth', swap_args, contract=TestSwapBase.swap_contract.ToString())
+        self.assertEqual(len(results), 0)
+
 
     def test_b_swap_from_eth(self):
 
@@ -71,7 +79,7 @@ class TestSwap(TestSwapBase):
         token = self.nep5_token_from_contract(TestSwapBase.nex_contract)
         current_balance_user = int(token.GetBalance(user_wallet, self.token_owner_addr()))
 
-        amountToSwap = 100
+        amountToSwap = 1000
         eth_addr = '7FAB4CB3D917719284F9E715A9c6B6FA1fBA217f'
         swap_id = 'a4272b7709b4e2dd0a208c020f6e0418b8a32f95c1c564d0c3b158ef47d496217FAB4CB3D917719284F9E715A9c6B6FA1fBA217f'
         swap_args = [self.token_owner_addr(), eth_addr, Fixed8.FromDecimal(amountToSwap).value, swap_id]

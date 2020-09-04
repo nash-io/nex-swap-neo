@@ -24,6 +24,8 @@ OnSwapFromEth = RegisterAction("onSwapFromEth", "addr", "ethAddr", "amount", "sw
 
 SWAP_CONTRACT_KEY= 'swapContract'
 
+# Minimum amount to swap is 500 NEX
+MIN_SWAP_AMOUNT = 50000000000
 
 def Main(operation, args):
     """
@@ -92,6 +94,9 @@ def swapToEth(args):
     ethAddr = args[1]
     amount = args[2]
     
+    if amount < MIN_SWAP_AMOUNT:
+        raise Exception("Need to swap at least 500 NEX")
+
     validateEthAddr(ethAddr)
     validateNeoAddr(addr)
 
