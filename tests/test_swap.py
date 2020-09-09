@@ -25,7 +25,7 @@ class TestSwap(TestSwapBase):
         current_balance_contract = int(token.GetBalance(user_wallet, TestSwapBase.swap_contract))
 
         amountToSwap = 1000
-        eth_addr = '7FAB4CB3D917719284F9E715A9c6B6FA1fBA217f'
+        eth_addr = bytes.fromhex('7FAB4CB3D917719284F9E715A9c6B6FA1fBA217f')
         swap_args = [self.token_owner_addr(), eth_addr, Fixed8.FromDecimal(amountToSwap).value]
 
         tx, results = self.invoke_test(user_wallet, 'swapToEth', swap_args, contract=TestSwapBase.swap_contract.ToString())
@@ -45,7 +45,7 @@ class TestSwap(TestSwapBase):
         swapId = event_results[4].Value
         self.assertEqual(Fixed8.FromDecimal(amountToSwap).value, int.from_bytes(amount, 'little'))
         self.assertEqual(addr, self.token_owner_sh())
-        self.assertEqual(ethAddr.decode('utf-8'), eth_addr)
+        self.assertEqual(ethAddr, eth_addr)
 
         new_balance_user = int(token.GetBalance(user_wallet, self.token_owner_addr()))
         new_balance_contract = int(token.GetBalance(user_wallet, TestSwapBase.swap_contract))
@@ -58,15 +58,14 @@ class TestSwap(TestSwapBase):
         self.assertEqual(Fixed8.FromDecimal(new_balance_contract).value, amount)
 
         # invalid eth address
-        eth_addr = '7FAB4CB3D917719284F9E715A9c6B6FA1fBA21'
-        swap_args = [self.token_owner_addr(), eth_addr, Fixed8.FromDecimal(amountToSwap).value]
+        invalid_eth_addr = bytes.fromhex('7FAB4CB3D917719284F9E715A9c6B6FA1fBA2a')
+        swap_args = [self.token_owner_addr(), invalid_eth_addr, Fixed8.FromDecimal(amountToSwap).value]
 
         tx, results = self.invoke_test(user_wallet, 'swapToEth', swap_args, contract=TestSwapBase.swap_contract.ToString())
         self.assertEqual(len(results), 0)
 
         # Test min swap amount
         amountToSwap = 499.99999
-        eth_addr = '7FAB4CB3D917719284F9E715A9c6B6FA1fBA217f'
         swap_args = [self.token_owner_addr(), eth_addr, Fixed8.FromDecimal(amountToSwap).value]
 
         tx, results = self.invoke_test(user_wallet, 'swapToEth', swap_args, contract=TestSwapBase.swap_contract.ToString())
@@ -80,7 +79,7 @@ class TestSwap(TestSwapBase):
         current_balance_user = int(token.GetBalance(user_wallet, self.token_owner_addr()))
 
         amountToSwap = 1000
-        eth_addr = '7FAB4CB3D917719284F9E715A9c6B6FA1fBA217f'
+        eth_addr = bytes.fromhex('7FAB4CB3D917719284F9E715A9c6B6FA1fBA217f')
         swap_id = 'a4272b7709b4e2dd0a208c020f6e0418b8a32f95c1c564d0c3b158ef47d496217FAB4CB3D917719284F9E715A9c6B6FA1fBA217f'
         swap_args = [self.token_owner_addr(), eth_addr, Fixed8.FromDecimal(amountToSwap).value, swap_id]
 
@@ -115,7 +114,7 @@ class TestSwap(TestSwapBase):
         swapid = event_results[4].Value
         self.assertEqual(Fixed8.FromDecimal(amountToSwap).value, int.from_bytes(amount, 'little'))
         self.assertEqual(addr, self.token_owner_sh())
-        self.assertEqual(ethAddr.decode('utf-8'), eth_addr)
+        self.assertEqual(ethAddr, eth_addr)
         self.assertEqual(swap_id, swapid.decode('utf-8'))
         tx, results = self.invoke_test(user_wallet, 'totalSwapped', [], contract=TestSwapBase.swap_contract.ToString())
 

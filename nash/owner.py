@@ -19,9 +19,7 @@ TOKEN_OWNER4 = b'\x14\x8c5l\xec#\x14\xb3\xac\xa4\x1e\xe7\xd3\x82\xa0\x965\x9c\xc
 TOKEN_OWNER5 = b'\xc0[\xd5\x02\x8c\x88\x89,4~\xe7H\xc3o\x8d3;\x94n\xb0'
 
 OWNERS_INITIALIZED = 'owners_initialized'
-
-def check_owners_initialized(ctx):
-    return Get(ctx, OWNERS_INITIALIZED)
+    
 
 def initialize_owners(ctx):
     """
@@ -33,7 +31,7 @@ def initialize_owners(ctx):
     :return:
     """
     print("checking owners initialized")
-    if not check_owners_initialized(ctx):
+    if not Get(ctx, OWNERS_INITIALIZED):
         print("initializing owners!")
         Put(ctx, 'owner1', TOKEN_OWNER1)
         Put(ctx, 'owner2', TOKEN_OWNER2)
@@ -75,7 +73,10 @@ def check_owners(ctx, required):
     :param ctx: StorageContext
     :return: bool
     """
-
+    if not Get(ctx, OWNERS_INITIALIZED):
+        print("Please run initializeOwners")
+        return False
+        
     total = 0
 
     owners = get_owners(ctx)

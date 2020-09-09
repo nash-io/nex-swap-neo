@@ -49,13 +49,6 @@ def Main(operation, args):
 
     elif trigger == Application():
 
-        if operation == 'initializeOwners':
-            return initialize_owners(ctx)
-
-        if not check_owners_initialized(ctx):
-            print('Please initialize owners')
-            return False
-
         if operation == 'swapToEth':
             if len(args) == 3:
                 return swapToEth(args)
@@ -70,11 +63,14 @@ def Main(operation, args):
             return getTotalSwapped()
 
         # owner / admin methods
+        elif operation == 'initializeOwners':
+            return initialize_owners(ctx)
+
         elif operation == 'setSwapTokenContract':
             if len(args) == 1:                
                 return setSwapContract(args)
             raise Exception('Invalid argument length')
-
+        
         elif operation == 'getOwners':
             return get_owners(ctx)
 
@@ -97,31 +93,26 @@ def swapToEth(args):
     if amount < MIN_SWAP_AMOUNT:
         raise Exception("Need to swap at least 500 NEX")
 
-    validateEthAddr(ethAddr)
-    validateNeoAddr(addr)
+    validateAddr(ethAddr)
+    validateAddr(addr)
 
     tx = GetScriptContainer()
     txHash = tx.Hash
-
-    if not CheckWitness(addr):
-        raise Exception("Must be signed by swapper addr")
-
-    if amount <= 0:
-        raise Exception("Invalid amount")
-
     swapId = concat(txHash, addr)
 
     if Get(ctx, swapId) > 0:
         raise Exception("Already swap for this transaction and address")
 
-    args = [addr, GetExecutingScriptHash(), amount]
+    if CheckWitness(addr):
 
-    transferOfTokens = DynamicAppCall(getSwapContract(), 'transferFrom', args)
+        args = [addr, GetExecutingScriptHash(), amount]
 
-    if transferOfTokens:
-        Put(ctx, swapId, 1)
-        OnSwapToEth(addr, ethAddr, amount, swapId)
-        return True
+        transferOfTokens = DynamicAppCall(getSwapContract(), 'transferFrom', args)
+
+        if transferOfTokens:
+            Put(ctx, swapId, 1)
+            OnSwapToEth(addr, ethAddr, amount, swapId)
+            return True
 
     raise Exception("Could not transfer tokens to swap contract")
 
@@ -141,8 +132,8 @@ def swapFromEth(args):
         if Get(ctx, swapId) > 0:
             raise Exception("Already swap for this transaction and address")
 
-        validateEthAddr(ethAddr)
-        validateNeoAddr(addr)
+        validateAddr(ethAddr)
+        validateAddr(addr)
 
         totalAvailable = getTotalSwapped()
         if totalAvailable < amount:
@@ -177,14 +168,9 @@ def setSwapContract(args):
     return False
 
 
-def validateNeoAddr(addr):
+def validateAddr(addr):
     if len(addr) != 20:
-        raise Exception("Invalid Neo Addr")
-    return True
-
-def validateEthAddr(addr):
-    if len(addr) != 40:
-        raise Exception("Invalid Eth Addr")
+        raise Exception("Invalid Addr")
     return True
 
 def getSwapContract():
