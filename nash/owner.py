@@ -19,6 +19,7 @@ TOKEN_OWNER4 = b'\x14\x8c5l\xec#\x14\xb3\xac\xa4\x1e\xe7\xd3\x82\xa0\x965\x9c\xc
 TOKEN_OWNER5 = b'\xc0[\xd5\x02\x8c\x88\x89,4~\xe7H\xc3o\x8d3;\x94n\xb0'
 
 OWNERS_INITIALIZED = 'owners_initialized'
+MINTER_ROLE = 'minter_role'
     
 
 def initialize_owners(ctx):
@@ -38,7 +39,6 @@ def initialize_owners(ctx):
         Put(ctx, 'owner3', TOKEN_OWNER3)
         Put(ctx, 'owner4', TOKEN_OWNER4)
         Put(ctx, 'owner5', TOKEN_OWNER5)
-
         Put(ctx, OWNERS_INITIALIZED, True)
         return True
 
@@ -64,6 +64,19 @@ def get_owners(ctx):
     :return: list: a list of owners
     """
     return [Get(ctx, 'owner1'), Get(ctx, 'owner2'), Get(ctx, 'owner3'), Get(ctx, 'owner4'), Get(ctx, 'owner5')]
+
+
+def check_minter(ctx):
+    minter = Get(ctx, MINTER_ROLE)
+
+    if not minter:
+        print("Please Set a minter")
+        return False
+
+    if CheckWitness(minter):
+        return True
+
+    return False
 
 def check_owners(ctx, required):
     """

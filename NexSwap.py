@@ -23,9 +23,16 @@ OnSwapToEth = RegisterAction("onSwapToEth", "addr", "ethAddr", "amount", "swapId
 OnSwapFromEth = RegisterAction("onSwapFromEth", "addr", "ethAddr", "amount", "swapId")
 
 SWAP_CONTRACT_KEY= 'swapContract'
+SWAPID_PREFIX = 'swapId'
+SWAP_COUNTER = 'swapCounter'
 
 # Minimum amount to swap is 500 NEX
 MIN_SWAP_AMOUNT = 50000000000
+
+# Number of admins required for sensitive actions
+# This will be changed to 3 for mainnet
+# but kept at 1 for testing
+ADMINS_REQUIRED = 1
 
 def Main(operation, args):
     """
@@ -70,7 +77,12 @@ def Main(operation, args):
             if len(args) == 1:                
                 return setSwapContract(args)
             raise Exception('Invalid argument length')
-        
+
+        elif operation == 'setMinter':
+            if len(args) == 1:                
+                return setMinter(args)
+            raise Exception('Invalid argument length')
+
         elif operation == 'getOwners':
             return get_owners(ctx)
 
@@ -79,6 +91,7 @@ def Main(operation, args):
 
         elif operation == 'switchOwner':
             return switch_owner(ctx, args)
+
 
         raise Exception("Unknown operation")
 
@@ -98,9 +111,11 @@ def swapToEth(args):
 
     tx = GetScriptContainer()
     txHash = tx.Hash
-    swapId = concat(txHash, addr)
+    replayCheck = concat(txHash, addr)
 
-    if Get(ctx, swapId) > 0:
+    swapId = Get(ctx, SWAP_COUNTER)
+
+    if Get(ctx, replayCheck) > 0:
         raise Exception("Already swap for this transaction and address")
 
     if CheckWitness(addr):
@@ -110,7 +125,9 @@ def swapToEth(args):
         transferOfTokens = DynamicAppCall(getSwapContract(), 'transferFrom', args)
 
         if transferOfTokens:
-            Put(ctx, swapId, 1)
+            swapId = swapId +1
+            Put(ctx, SWAP_COUNTER, swapId)
+            Put(ctx, replayCheck, 1)
             OnSwapToEth(addr, ethAddr, amount, swapId)
             return True
 
@@ -122,14 +139,16 @@ def swapFromEth(args):
     """
     Only admin may execute a swap from eth
     """
-    if check_owners(ctx, 1):
+    if check_minter(ctx):
         addr = args[0] # Neo Address to send NEX to 
         ethAddr = args[1]
         amount = args[2]
-        swapId = args[3] # Eth transaction hash + eth address
+        swapId = args[3] # integer
+
+        swapIdStorage = concat(SWAPID_PREFIX, swapId)
 
         # Prevent admin from accidentally performing swap back more than once
-        if Get(ctx, swapId) > 0:
+        if Get(ctx, swapIdStorage) > 0:
             raise Exception("Already swap for this transaction and address")
 
         validateAddr(ethAddr)
@@ -144,7 +163,7 @@ def swapFromEth(args):
 
         transferOfTokens = DynamicAppCall(getSwapContract(), 'transfer', args)
         if transferOfTokens:
-            Put(ctx, swapId, 1)
+            Put(ctx, swapIdStorage, 1)
             OnSwapFromEth(addr,ethAddr,amount,swapId)
             return True
 
@@ -160,13 +179,20 @@ def getTotalSwapped():
     return balance
 
 def setSwapContract(args):
-    if check_owners(ctx, 1):
+    if check_owners(ctx, ADMINS_REQUIRED):
         contract = args[0]
         if len(contract) == 20:
             Put(ctx, SWAP_CONTRACT_KEY, contract)
             return True 
     return False
 
+def setMinter(args):
+    if check_owners(ctx, ADMINS_REQUIRED):
+        minter = args[0]
+        if len(minter) == 20:
+            Put(ctx, MINTER_ROLE, minter)
+            return True 
+    return False
 
 def validateAddr(addr):
     if len(addr) != 20:
