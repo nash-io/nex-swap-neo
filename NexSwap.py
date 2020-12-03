@@ -32,7 +32,7 @@ MIN_SWAP_AMOUNT = 50000000000
 # Number of admins required for sensitive actions
 # This will be changed to 3 for mainnet
 # but kept at 1 for testing
-ADMINS_REQUIRED = 1
+ADMINS_REQUIRED = 3
 
 def Main(operation, args):
     """
