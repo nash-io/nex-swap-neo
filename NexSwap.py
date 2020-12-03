@@ -14,13 +14,16 @@ from boa.interop.System.ExecutionEngine import GetExecutingScriptHash,GetScriptC
 from boa.interop.Neo.TriggerType import Application, Verification
 from boa.interop.Neo.Storage import *
 from boa.interop.Neo.Action import RegisterAction
-from boa.interop.Neo.App import DynamicAppCall
+from boa.interop.Neo.App import RegisterAppCall
 from boa.interop.Neo.Transaction import *
 
 ctx = GetContext()
 
 OnSwapToEth = RegisterAction("onSwapToEth", "addr", "ethAddr", "amount", "swapId")
 OnSwapFromEth = RegisterAction("onSwapFromEth", "addr", "ethAddr", "amount", "swapId")
+
+
+AppCallNex = RegisterAppCall('3A4ACD3647086E7C44398AAC0349802E6A171129', 'operation','args')
 
 SWAP_CONTRACT_KEY= 'swapContract'
 SWAPID_PREFIX = 'swapId'
@@ -73,11 +76,6 @@ def Main(operation, args):
         elif operation == 'initializeOwners':
             return initialize_owners(ctx)
 
-        elif operation == 'setSwapTokenContract':
-            if len(args) == 1:                
-                return setSwapContract(args)
-            raise Exception('Invalid argument length')
-
         elif operation == 'setMinter':
             if len(args) == 1:                
                 return setMinter(args)
@@ -122,7 +120,7 @@ def swapToEth(args):
 
         args = [addr, GetExecutingScriptHash(), amount]
 
-        transferOfTokens = DynamicAppCall(getSwapContract(), 'transferFrom', args)
+        transferOfTokens = AppCallNex('transferFrom', args)
 
         if transferOfTokens:
             swapId = swapId +1
@@ -161,7 +159,7 @@ def swapFromEth(args):
         ## transfer back to user
         args = [GetExecutingScriptHash(), addr, amount]
 
-        transferOfTokens = DynamicAppCall(getSwapContract(), 'transfer', args)
+        transferOfTokens = AppCallNex('transfer', args)
         if transferOfTokens:
             Put(ctx, swapIdStorage, 1)
             OnSwapFromEth(addr,ethAddr,amount,swapId)
@@ -171,20 +169,12 @@ def swapFromEth(args):
 
 
 def getTotalSwapped():
-    tokenContract = getSwapContract()
     contractAddress = GetExecutingScriptHash()
     args = [contractAddress]
-    balance = DynamicAppCall(tokenContract,'balanceOf',args)
+    balance = AppCallNex('balanceOf',args)
 
     return balance
 
-def setSwapContract(args):
-    if check_owners(ctx, ADMINS_REQUIRED):
-        contract = args[0]
-        if len(contract) == 20:
-            Put(ctx, SWAP_CONTRACT_KEY, contract)
-            return True 
-    return False
 
 def setMinter(args):
     if check_owners(ctx, ADMINS_REQUIRED):
@@ -199,8 +189,3 @@ def validateAddr(addr):
         raise Exception("Invalid Addr")
     return True
 
-def getSwapContract():
-    contract = Get(ctx, SWAP_CONTRACT_KEY)
-    if len(contract) == 20:
-        return contract
-    raise Exception("Swap contract not set")

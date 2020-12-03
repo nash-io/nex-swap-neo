@@ -459,7 +459,7 @@ class NexFixtureTest(BlockchainFixtureTestCase):
 
     def _deploy_compiled_contract_to_blockchain(self, compiled_contract_path, wallet) -> (UInt160, Block):
 
-        function_code = LoadContract([compiled_contract_path, '0710', '05', 'True', 'True', 'True'])
+        function_code = LoadContract([compiled_contract_path, '0710', '05', 'True', 'True', 'False'])
 
         contract_script = generate_deploy_script(function_code.Script, 'Test', '1', 'Test', 'Email', 'Test',
                                                  function_code.ContractProperties, function_code.ReturnTypeBigInteger,

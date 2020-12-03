@@ -65,7 +65,7 @@ class TestSwapBase(NexFixtureTest):
 
         nex_contract_hash, block = self._deploy_compiled_contract_to_blockchain('%s/fixtures/NEX.avm' % settings.DATA_DIR_PATH, owner_wallet)
         TestSwapBase.nex_contract = nex_contract_hash
-
+        
         tx, results = self.invoke_test(owner_wallet, 'initializeOwners', [], contract=nex_contract_hash.ToString())
         tx, block = self._invoke_tx_on_blockchain(tx, owner_wallet)
 
@@ -88,10 +88,11 @@ class TestSwapBase(NexFixtureTest):
         self.assertTrue(results[0].GetBoolean())
         tx, block = self._invoke_tx_on_blockchain(tx, owner_wallet)
 
-        # Set contract to swap
-        tx, results = self.invoke_test(owner_wallet, 'setSwapTokenContract', [TestSwapBase.nex_contract.Data], contract=swap_contract.ToString())
-        self.assertTrue(results[0].GetBoolean())
-        tx, block = self._invoke_tx_on_blockchain(tx, owner_wallet)
+        # # Set contract to swap
+        # print("CONTRACT: %s " % TestSwapBase.nex_contract.Data)
+        # tx, results = self.invoke_test(owner_wallet, 'setSwapTokenContract', [TestSwapBase.nex_contract.Data], contract=swap_contract.ToString())
+        # self.assertTrue(results[0].GetBoolean())
+        # tx, block = self._invoke_tx_on_blockchain(tx, owner_wallet)
 
         token_owner = self.GetTokenOwner()
         token = self.nep5_token_from_contract(TestSwapBase.nex_contract)
